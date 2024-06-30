@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Image Query</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+
+<style type="text/css">
+    img {
+        max-width: 512px;
+        max-height: 512px;
+        width: auto;
+        height: auto;
+    }
+</style>
+
+<body>
+    
+    <h1>Image Query</h1>
+    <form id="image-form" enctype="multipart/form-data">
+        <input id="chooseImage" type="file" name="image" accept="image/*" required>
+        <input type="submit" value="Submit">
+    </form>
+
+    <div class="col-md-5">
+        <img id="img-avatar" src="../images/index/user.jpg" class="img-responsive" alt="无法显示默认头像" />
+    </div>
+    <h2>Results:</h2>
+    <div id="image-container"></div>
+
+    <script>
+        $("#chooseImage").on('change',function(){
+            let filePath = $(this).val(); //获取到input的value，里面是文件的路径
+            let fileFormat = filePath.substring(filePath.lastIndexOf(".")).toLowerCase(); //获取文件后缀
+
+            let src = window.URL.createObjectURL(this.files[0]); //转成可以在本地预览的格式
+
+            // 检查是否是图片
+            if( !fileFormat.match(/.png|.jpg|.jpeg|.bmp|.gif/) ) {
+                //error_prompt_alert
+                alert('上传错误,文件格式必须为：png/jpg/jpeg/bmp/gif');
+                return ;
+            }
+            $('#img-avatar').attr('src', src); //将图片地址放置在img的src中。
+        });
+
+        $(document).ready(function() {
+            $('#image-form').submit(function(event) {
+                event.preventDefault();
+                var formData = new FormData(this);
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/img_query',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(data) {
+                        console.log(data)
+                        $('#image-container').empty();
+                        data.forEach(function(filename) {
+                            $.ajax({
+                                type: 'POST',
+                                url: '/photo',
+                                data: { key: filename },
+                                success: function(imageData) {
+                                    var img = $('<img>').attr('src', 'data:image/png;base64,' + imageData);
+                                    $('#image-container').append(img);
+                                }
+                            });
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
